@@ -1,29 +1,48 @@
-# Education Pals Build Pack
+# Where Will This Fine-Tune Break? Pre-Flight Check
 
-- Course: `2ad65768-198c-5614-ba63-948602ecc629`
-- Chapter: `4a4ae561-8dac-521c-95c0-3be3b28ca295`
-- Template: `baw_c002_ch06`
-- Compiled: 2026-07-27T19:42:02.631Z
-- Verification token: `01KYJHJFC6AKW491JBPCCB0J3W`
-- Composition mode: `shipgen`
-- Workshop publication: `01KYJHHT8AZC6B44HFPXNR4B6T`
-- Proof challenge: `8a8b876a7fb4d477dae6dbf244ae22b4`
-- Artifact type: `baw.v3`
-- Repository: https://github.com/educationpals-builds/user-baw-ch06-1785181155185-build
+## The Specimen
 
-## Variants
+A candidate open model checkpoint (`open-llama-finetune-candidate`) staged for fine-tuning on mixed-domain instruction data. The training run is planned for 5k steps with heterogeneous task batches.
 
-- `README.md` → `README.md`
-- `charter.md` → `charter.md`
-- `blueprints/pre-flight-bench.md` → `blueprints/pre-flight-bench.md`
-- `prompts/clause-walk-pack.md` → `prompts/clause-walk-pack.md`
-- `METHOD.md` → `METHOD.md`
-- `VERIFY.md` → `VERIFY.md`
-- `.ep/provenance.json` → `.ep/provenance.json.md`
+## The Verdict
 
-## Files
+**HOLD** — Instruction drift risk identified at ~2k steps on mixed domain data. The model's task-boundary representations destabilize when domain-switching frequency exceeds the effective context window of learned instruction patterns.
 
-- `manifest.json` — verification manifest
-- `instructions.md` — paste tips per variant
+## The Tripwire
+
+```yaml
+tripwire:
+  metric: instruction_adherence_score
+  threshold: < 0.72 on held-out single-domain eval after step 2000
+  action: halt training, checkpoint rollback, reduce domain mixing ratio
+  recheck: every 500 steps post-intervention
+```
+
+## One-Paste Rebuild Block
+
+```bash
+# Clone and initialize pre-flight bench
+git clone <this-repo>
+cd pre-flight-finetune-check
+
+# Run BLOCK clause sweep on your model config
+cat your_training_config.yaml | python scripts/clause_check.py --all
+
+# Or run individual clause checks
+python scripts/clause_check.py --clause boundaries < model_arch.py
+python scripts/clause_check.py --clause leakage < data_pipeline.py
+python scripts/clause_check.py --clause overfit < training_loop.py
+python scripts/clause_check.py --clause collapse < eval_harness.py
+python scripts/clause_check.py --clause kill-switch < checkpoint_manager.py
+
+# Generate pre-flight report
+python scripts/generate_report.py --model open-llama-finetune-candidate
+```
+
+---
+
+**Build**: baw.v3 workshop  
+**Status**: ai_drafted  
+**Method**: See METHOD.md for BLOCK framework
 
 <!-- educationpals-build-verified -->
